@@ -148,7 +148,7 @@ def delete_product(id):
         return jsonify({'message': 'Could not delete product'}), 500
 
 if __name__ == '__main__':
-    port = 8000
+    port = 5001
     if len(sys.argv) > 1:
         port = int(sys.argv[1])
     app.run(debug=True, port=port)
