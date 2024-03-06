@@ -5,6 +5,7 @@ from flask import Flask, request, jsonify
 from sqlalchemy import create_engine, Column, String, Integer
 from sqlalchemy.orm import sessionmaker, declarative_base
 import jwt
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -43,11 +44,13 @@ def add_product():
     try:
         is_valid_token, username = verify_token()
         if not is_valid_token:
-            return jsonify({'message': 'Access granted for user: ' + username})
+            return jsonify({'message': 'Access denied'}), 401
+
         data = request.json
         title = data.get('title')
         content = data.get('content')
         status = data.get('status')
+
         session = Session()
         product = Product(title=title, content=content, status=status)
         session.add(product)
@@ -63,15 +66,86 @@ def list_products():
     try:
         is_valid_token, username = verify_token()
         if not is_valid_token:
-            return jsonify({'message': 'Access granted for user: ' + username})
+            return jsonify({'message': 'Access denied'}), 401
+
         session = Session()
         products = session.query(Product).all()
         session.close()
+
         product_list = [{'id': product.id, 'title': product.title, 'content': product.content, 'status': product.status} for product in products]
         return jsonify(product_list)
     except Exception as e:
         print(e)
         return jsonify({'message': 'Could not list products'}), 500
+
+@app.route('/product/<int:id>', methods=['GET'])
+def get_product(id):
+    try:
+        is_valid_token, username = verify_token()
+        if not is_valid_token:
+            return jsonify({'message': 'Access denied'}), 401
+
+        session = Session()
+        product = session.query(Product).filter_by(id=id).first()
+        session.close()
+
+        if product:
+            return jsonify({'id': product.id, 'title': product.title, 'content': product.content, 'status': product.status})
+        else:
+            return jsonify({'message': 'Product not found'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Could not get product'}), 500
+
+@app.route('/product/update/<int:id>', methods=['PUT'])
+def update_product(id):
+    try:
+        is_valid_token, username = verify_token()
+        if not is_valid_token:
+            return jsonify({'message': 'Access denied'}), 401
+
+        session = Session()
+        product = session.query(Product).filter_by(id=id).first()
+
+        if not product:
+            session.close()
+            return jsonify({'message': 'Product not found'}), 404
+
+        data = request.json
+        product.title = data.get('title', product.title)
+        product.content = data.get('content', product.content)
+        product.status = data.get('status', product.status)
+
+        session.commit()
+        session.close()
+
+        return jsonify({'message': 'Product updated successfully'})
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Could not update product'}), 500
+
+@app.route('/product/delete/<int:id>', methods=['DELETE'])
+def delete_product(id):
+    try:
+        is_valid_token, username = verify_token()
+        if not is_valid_token:
+            return jsonify({'message': 'Access denied'}), 401
+
+        session = Session()
+        product = session.query(Product).filter_by(id=id).first()
+
+        if not product:
+            session.close()
+            return jsonify({'message': 'Product not found'}), 404
+
+        session.delete(product)
+        session.commit()
+        session.close()
+
+        return jsonify({'message': 'Product deleted successfully'})
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Could not delete product'}), 500
 
 if __name__ == '__main__':
     port = 8000
