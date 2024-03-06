@@ -34,7 +34,8 @@ def register():
         session.commit()
         session.close()
         return jsonify({'message': 'User registered successfully'}), 201
-    except e:
+    except Exception as e:
+        print(e)
         return jsonify({'message': 'Could not register user'}), 500
 
 @app.route('/login', methods=['POST'])
@@ -51,7 +52,8 @@ def login():
             return jsonify({'message': 'Login successful', 'token': token})
         else:
             return jsonify({'message': 'Invalid username or password'}), 401
-    except:
+    except Exception as e:
+        print(e)
         return jsonify({'message': 'Could not login'}), 500
 
 def generate_token(username):
@@ -62,4 +64,7 @@ def generate_token(username):
     return token
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = 8000
+    if len(sys.argv) > 1:
+        port = int(sys.argv[1])
+    app.run(debug=True, port=port)
