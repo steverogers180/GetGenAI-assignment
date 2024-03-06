@@ -56,7 +56,7 @@ def add_product():
         session.add(product)
         session.commit()
         session.close()
-        return jsonify({'message': 'Product added successfully'})
+        return jsonify({'message': 'Product added successfully', id: product.id })
     except Exception as e:
         print(e)
         return jsonify({'message': 'Could not add product'}), 500
